@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Descubre Voltor: un shooter en primera persona donde una subida de alquiler se convierte en una lucha por tu piso. Historia, controles y acceso al juego.">
+  <meta name="theme-color" content="#141513">
+  <title>Voltor — El alquiler acaba aquí</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <header class="header">
+    <a class="logo" href="#inicio" aria-label="Voltor, inicio">V<span>O</span>LTOR</a>
+    <button class="menu-toggle" aria-expanded="false" aria-controls="navigation" hidden>Menú <span>+</span></button>
+    <nav id="navigation" aria-label="Navegación principal">
+      <a href="#historia">La historia</a><a href="#mundo">El mundo</a><a href="#controles">Cómo jugar</a><a class="nav-play" href="#jugar">Jugar <span>↗</span></a>
+    </nav>
+  </header>
+  <main id="contenido">
+    <section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-image" role="img" aria-label="Referencia visual de la presentación: combate en primera persona en una mazmorra"></div>
+      <div class="hero-content wrap">
+        <p class="eyebrow"><span class="signal"></span> SHOOTER EN PRIMERA PERSONA</p>
+        <h1 id="hero-title">EL ALQUILER<br>ACABA <em>AQUÍ.</em></h1>
+        <p class="hero-description">Tu casero ha subido el alquiler. Tú tienes otros planes.<br>Entra en el mundo de Voltor y lucha por quedarte con tu piso.</p>
+        <div class="hero-actions"><a class="button" href="#jugar">IR AL JUEGO <span>↗</span></a><a class="text-link" href="#historia">Descubre la historia <span>↓</span></a></div>
+      </div>
+      <div class="hero-bottom wrap"><span>01 / BIENVENIDO A VOLTOR</span><span>Imagen de referencia de la presentación</span></div>
+    </section>
+    <div class="ticker" aria-label="Características"><span>PRIMERA PERSONA</span><b>✳</b><span>EXPLORA</span><b>✳</b><span>ESQUIVA</span><b>✳</b><span>LUCHA POR TU PISO</span><b>✳</b></div>
+    <section class="story section wrap" id="historia">
+      <div><p class="eyebrow">01 — LA HISTORIA</p><h2>Una carta.<br>Mil euros.<br><span>Un límite.</span></h2></div>
+      <div class="story-copy"><p class="lead">Todo empieza con una subida de <strong>1.000 € en el alquiler.</strong></p><p>El protagonista recibe una carta de su casero anunciando el aumento. Pero descubre un vacío legal que podría permitirle quedarse con el piso y decide hacer todo lo posible para conseguirlo.</p><p>En este shooter en primera persona te pones en la piel de un inquilino que se enfrenta a su propietario. Muévete, recoge objetos y ábrete paso hasta el enfrentamiento final.</p><div class="mission"><span>TU OBJETIVO</span><strong>Derrotar al jefe final: el Voltor.</strong></div></div>
+    </section>
+    <section class="world section" id="mundo"><div class="wrap">
+      <div class="section-heading"><div><p class="eyebrow">02 — EL MUNDO</p><h2>No es una visita.<br>Es una incursión.</h2></div><p>La casa del protagonista y la casa o mazmorra del propietario son los escenarios del conflicto.</p></div>
+      <div class="world-grid"><article class="world-feature"><span class="item-number">/ 01</span><h3>Tu entorno</h3><p>Sofás, mesas y cuadros dan forma a los pisos. Explora cada estancia y encuentra el camino hacia tu objetivo.</p><span class="small-label">CASAS & MAZMORRAS</span></article><article><span class="item-number">/ 02</span><h3>Tu inventario</h3><p>Encuentra botiquines, balas, llaves y un escudo. Recoge los objetos pasando por encima de ellos.</p><span class="small-label">RECOGE & CONTINÚA</span></article><article><span class="item-number">/ 03</span><h3>Tu siguiente paso</h3><p>Interactúa con las puertas y avanza por el escenario. Combina movimiento, ataques y disparos para enfrentarte al propietario.</p><span class="small-label">EXPLORA & COMBATE</span></article></div>
+    </div></section>
+    <section class="section wrap controls" id="controles">
+      <div class="section-heading"><div><p class="eyebrow">03 — CÓMO JUGAR</p><h2>Conoce tus<br>movimientos.</h2></div><p>Teclado y ratón. Movimiento libre.<br>Aprende los controles antes de entrar.</p></div>
+      <div class="controls-grid">
+        <div class="control"><span>Moverse</span><div><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></div></div>
+        <div class="control"><span>Mirar / mover la cámara</span><kbd>Ratón</kbd></div>
+        <div class="control"><span>Correr</span><kbd>Shift</kbd></div>
+        <div class="control"><span>Esquivar</span><kbd>Q</kbd></div>
+        <div class="control"><span>Saltar</span><kbd>Espacio</kbd></div>
+        <div class="control"><span>Agacharse</span><kbd>Ctrl</kbd></div>
+        <div class="control"><span>Disparar</span><kbd>Clic izquierdo</kbd></div>
+        <div class="control"><span>Recargar</span><kbd>R</kbd></div>
+        <div class="control"><span>Cambiar de arma</span><kbd>Rueda del ratón</kbd></div>
+        <div class="control"><span>Abrir puertas</span><kbd>E</kbd></div>
+      </div>
+      <p class="controls-note"><span>↳</span> No hay función de apuntado. Los objetos se recogen automáticamente al pasar sobre ellos.</p>
+      <div class="rules"><article><span class="eyebrow">LA VICTORIA</span><h3>Acaba con el Voltor.</h3><p>Derrota al jefe final para ganar. En multijugador, gana quien consiga más puntuación dentro del tiempo establecido.</p></article><article><span class="eyebrow">LA DERROTA</span><h3>Cero vida. Vuelta a empezar.</h3><p>Si tu vida llega a cero, pierdes y tendrás que comenzar de nuevo desde el principio.</p></article></div>
+    </section>
+    <section class="play-section" id="jugar" aria-labelledby="play-title"><div class="wrap play-inner"><p class="eyebrow">04 — TU TURNO</p><h2 id="play-title">EL PISO NO SE<br>DEFIENDE SOLO.</h2><p id="game-status" role="status">El acceso al juego estará disponible próximamente.</p><a id="game-link" class="button dark" hidden target="_blank" rel="noopener noreferrer">JUGAR A VOLTOR <span>↗</span></a><button id="game-pending" class="button dark" disabled>PRÓXIMAMENTE <span>↗</span></button><p class="play-footnote">Consulta los controles y prepárate para el enfrentamiento.</p><noscript><p>Activa JavaScript para consultar la disponibilidad del enlace al juego.</p></noscript></div></section>
+  </main>
+  <footer class="wrap footer"><a class="logo" href="#inicio">VOLTOR</a><div><p>Un proyecto de Jalail Hazi, Quique Pons y Eric Diaz.</p></div><a class="back-top" href="#inicio" aria-label="Volver al inicio">↑</a></footer>
+</body>
+</html>
