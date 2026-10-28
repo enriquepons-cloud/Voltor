@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voltor - Juego</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js"}}</script>
+</head>
+<body>
+  <canvas id="viewport" aria-label="Juego en primera persona"></canvas>
+  <div id="crosshair" aria-hidden="true">+</div>
+  <footer id="hud" aria-label="Estado de la partida">
+    <div class="hud-panel">
+      <strong id="ammo" class="hud-number">08</strong>
+      <span class="hud-label">MUNICIÓN</span>
+      <small>RESERVA: <span id="reserve">40</span></small>
+    </div>
+    <div class="hud-panel">
+      <div class="hud-number"><strong id="health">100</strong><span class="percent">%</span></div>
+      <span class="hud-label">VIDA</span>
+    </div>
+    <div class="hud-portrait" aria-hidden="true">
+      <!-- Retrato sencillo hecho con rectángulos, sin imágenes externas. -->
+      <svg viewBox="0 0 32 40" shape-rendering="crispEdges">
+        <path fill="#252525" d="M0 0h32v40H0z"/>
+        <path fill="#515149" d="M5 2h22v8H5zM3 6h26v13H3z"/>
+        <path fill="#a59c84" d="M8 8h16v5h3v17h-3v6H8v-6H5V13h3z"/>
+        <path fill="#c4b99c" d="M10 10h12v17H10zM10 30h12v4H10z"/>
+        <path fill="#746951" d="M6 16h8v4H6zM18 16h8v4h-8zM14 19h4v8h-4zM8 27h5v3H8zM20 27h4v3h-4z"/>
+        <path fill="#262621" d="M8 17h5v2H8zM19 17h5v2h-5zM11 29h10v3H11z"/>
+        <path fill="#ded8c3" d="M9 17h2v1H9zM20 17h2v1h-2zM12 29h8v1h-8z"/>
+        <path fill="#464641" d="M5 36h22v4H5z"/>
+      </svg>
+    </div>
+    <div class="hud-panel">
+      <strong id="kill-count" class="hud-number kills-number">00 / 06</strong>
+      <span class="hud-label">BAJAS</span>
+    </div>
+    <div class="hud-panel">
+      <strong id="time" class="hud-number time-number">00:00</strong>
+      <span class="hud-label">TIEMPO</span>
+    </div>
+  </footer>
+  <div id="combat-status" role="status"></div>
+  <p id="toast" role="status"></p>
+  <section id="overlay" role="dialog" aria-modal="true" aria-labelledby="screen-title">
+    <div class="menu">
+      <h1 id="screen-title">Voltor</h1>
+      <p id="screen-description">Elimina a los seis enemigos y evita quedarte sin vida.</p>
+      <p class="controls">WASD: moverse · Ratón: mirar · Clic: disparar<br>R: recargar · Shift: correr · Escape: pausa</p>
+      <p>Dos impactos por enemigo. Las cajas dan munición y las cruces recuperan vida.</p>
+      <button id="play-button" disabled>Cargando...</button>
+      <button id="restart-button" hidden>Reiniciar</button>
+      <p id="input-hint">Haz clic en Jugar para capturar el ratón.</p>
+    </div>
+  </section>
+  <noscript>Necesitas activar JavaScript para jugar.</noscript>
+  <script type="module">
+    import('./src/main.js').catch((error) => {
+      console.error(error);
+      document.querySelector('#screen-title').textContent = 'No se pudo iniciar';
+      document.querySelector('#screen-description').textContent = 'Ejecuta npm ci y npm start en la carpeta del juego. Usa un navegador con WebGL 2. ' + error.message;
+    });
+  </script>
+</body>
+</html>
