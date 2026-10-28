@@ -1,13 +1,23 @@
 # Voltor
 
-Abre `index.html` de esta carpeta en tu navegador. Te llevará a la página del juego.
+Proyecto DAW con una página de presentación y un prototipo FPS con Three.js.
 
-También puedes abrir directamente `Informacio_web/Pagina_web/index.html`.
-No hace falta instalar dependencias ni ejecutar JavaScript desde la terminal.
+- Página: `Informacio_web/Pagina_web/index.html`.
+- Juego e instrucciones: `Informacio_web/Pagina_web/juego-threejs/README.md`.
 
-Los archivos HTML, CSS y JavaScript están en `Informacio_web/Pagina_web/`;
-la imagen está en `Informacio_web/assets/`. Mantén esta estructura para que
-las rutas funcionen.
+## Ejecutar página y juego
 
-El acceso al juego aparecerá como «Próximamente» hasta añadir su URL en
-`GAME_URL`, dentro de `Informacio_web/Pagina_web/script.js`.
+Necesitas Node.js 20 o superior, npm y Python 3.
+
+Desde la raíz del repositorio:
+
+```bash
+cd Informacio_web/Pagina_web/juego-threejs
+npm ci
+cd ..
+python3 -m http.server 8000 --bind 127.0.0.1
+```
+
+Abre http://127.0.0.1:8000 y pulsa «Abrir el juego». Usa Chrome de escritorio con teclado y ratón. Ctrl+C detiene el servidor.
+
+El juego también puede ejecutarse por separado con `npm start` desde su carpeta, en http://127.0.0.1:5173.
