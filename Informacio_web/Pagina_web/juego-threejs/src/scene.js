@@ -43,6 +43,13 @@ export function createScene(canvas, game) {
   const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x999999 });
   const darkMaterial = new THREE.MeshLambertMaterial({ color: 0x444444 });
   const whiteMaterial = new THREE.MeshBasicMaterial({ color: 0xeeeeee });
+  const shieldMaterial = new THREE.MeshLambertMaterial({ color: 0x1852b4 });
+  const shieldFaceMaterial = new THREE.MeshLambertMaterial({ color: 0x388bea, side: THREE.DoubleSide });
+  const shieldMarkMaterial = new THREE.MeshBasicMaterial({ color: 0xd5edff });
+  const healthMaterial = new THREE.MeshLambertMaterial({ color: 0x278b45 });
+  const healthLidMaterial = new THREE.MeshLambertMaterial({ color: 0x42b567 });
+  const brassMaterial = new THREE.MeshLambertMaterial({ color: 0xcba43f });
+  const copperMaterial = new THREE.MeshLambertMaterial({ color: 0x946433 });
   function box(parent, width, height, depth, x, y, z, material) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
     mesh.position.set(x, y, z);
@@ -51,8 +58,8 @@ export function createScene(canvas, game) {
   }
 
   const size = MAP.length * TILE;
-  box(scene, size, 0.2, size, size / 2, -0.1, size / 2, darkMaterial);
-  box(scene, size, 0.2, size, size / 2, 3.9, size / 2, darkMaterial);
+  const floor = box(scene, size, 0.2, size, size / 2, -0.1, size / 2, darkMaterial);
+  const ceiling = box(scene, size, 0.2, size, size / 2, 3.9, size / 2, darkMaterial);
   const walls = [];
   for (let row = 0; row < MAP.length; row++) {
     for (let col = 0; col < MAP[row].length; col++) {
@@ -76,14 +83,54 @@ export function createScene(canvas, game) {
 
   const pickups = game.pickups.map((item) => {
     const group = new THREE.Group();
-    box(group, 0.6, 0.35, 0.45, 0, 0, 0, darkMaterial);
-    if (item.type === 'health') {
-      box(group, 0.4, 0.08, 0.47, 0, 0, 0, whiteMaterial);
-      box(group, 0.08, 0.28, 0.47, 0, 0, 0, whiteMaterial);
+    if (item.type === 'shield') {
+      // Borde azul oscuro e interior azul claro en las dos caras.
+      const shape = new THREE.Shape();
+      shape.moveTo(-0.3, 0.3);
+      shape.lineTo(0.3, 0.3);
+      shape.lineTo(0.26, -0.15);
+      shape.lineTo(0, -0.4);
+      shape.lineTo(-0.26, -0.15);
+      shape.closePath();
+      const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.12, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 1, steps: 1 });
+      group.add(new THREE.Mesh(geometry, shieldMaterial));
+      for (const z of [-0.03, 0.15]) {
+        const face = new THREE.Mesh(new THREE.ShapeGeometry(shape), shieldFaceMaterial);
+        face.scale.setScalar(0.8);
+        face.position.z = z;
+        group.add(face);
+        box(group, 0.065, 0.37, 0.018, 0, -0.005, z, shieldMarkMaterial);
+        box(group, 0.3, 0.065, 0.018, 0, 0.06, z, shieldMarkMaterial);
+      }
+      group.position.set(item.x, 0.5, item.z);
+    } else if (item.type === 'health') {
+      // Maletín verde con tapa, asa y una cruz blanca a cada lado.
+      box(group, 0.76, 0.45, 0.4, 0, 0, 0, healthMaterial);
+      box(group, 0.8, 0.08, 0.44, 0, 0.2, 0, healthLidMaterial);
+      box(group, 0.06, 0.14, 0.08, -0.14, 0.31, 0, healthMaterial);
+      box(group, 0.06, 0.14, 0.08, 0.14, 0.31, 0, healthMaterial);
+      box(group, 0.34, 0.06, 0.08, 0, 0.4, 0, healthLidMaterial);
+      for (const z of [-0.21, 0.21]) {
+        box(group, 0.3, 0.08, 0.025, 0, -0.02, z, whiteMaterial);
+        box(group, 0.08, 0.28, 0.025, 0, -0.02, z, whiteMaterial);
+      }
+      group.position.set(item.x, 0.3, item.z);
     } else {
-      for (let x = -1; x <= 1; x++) box(group, 0.06, 0.25, 0.47, x * 0.16, 0, 0, whiteMaterial);
+      // Bala vertical: casquillo amarillo latón y punta marrón cobriza.
+      const casing = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.42, 16), brassMaterial);
+      casing.position.y = 0.27;
+      group.add(casing);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 16), brassMaterial);
+      base.position.y = 0.04;
+      group.add(base);
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.08, 16), brassMaterial);
+      neck.position.y = 0.52;
+      group.add(neck);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 16), copperMaterial);
+      tip.position.y = 0.67;
+      group.add(tip);
+      group.position.set(item.x, 0.015, item.z);
     }
-    group.position.set(item.x, 0.3, item.z);
     scene.add(group);
     return group;
   });
@@ -95,17 +142,68 @@ export function createScene(canvas, game) {
   box(body, 0.2, 0.6, 0.25, 0.15, 0.3, 0.15, darkMaterial);
   scene.add(body);
 
-  // El arma se dibuja aparte para que no atraviese visualmente las paredes.
-  const weaponScene = new THREE.Scene();
-  const weaponCamera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.01, 10);
-  weaponScene.add(new THREE.AmbientLight(0xffffff, 2));
-  const weapon = new THREE.Group();
-  weapon.position.set(0.22, -0.22, -0.5);
-  box(weapon, 0.15, 0.13, 0.4, 0, 0, -0.1, darkMaterial);
-  box(weapon, 0.08, 0.08, 0.25, 0, 0.02, -0.4, wallMaterial);
-  box(weapon, 0.08, 0.18, 0.1, 0, -0.12, 0, darkMaterial);
-  weaponScene.add(weapon);
+  // Las manos se dibujan aparte para que no se recorten contra las paredes.
+  const handsScene = new THREE.Scene();
+  const handsCamera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.01, 5);
+  handsScene.add(new THREE.AmbientLight(0xffffff, 1.5));
+  const handsLight = new THREE.DirectionalLight(0xffffff, 2);
+  handsLight.position.set(-2, 3, 1);
+  handsScene.add(handsLight);
+  const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xc39a72 });
+  const sleeveMaterial = new THREE.MeshLambertMaterial({ color: 0x50534d });
+  const cuffMaterial = new THREE.MeshLambertMaterial({ color: 0x30332f });
+  for (const side of [-1, 1]) {
+    const hand = new THREE.Group();
+    // Postura de sujeción: mano derecha atrás y mano izquierda de apoyo delante.
+    hand.position.set(side === 1 ? 0.23 : 0.08, side === 1 ? -0.19 : -0.22, side === 1 ? -0.58 : -0.75);
+    hand.rotation.set(0, side === 1 ? 0.05 : -0.55, side === 1 ? -0.12 : 0.3);
+    hand.scale.setScalar(0.85);
+    // Manga, puño y muñeca.
+    const sleeve = box(hand, 0.15, 0.14, 0.38, side * 0.025, -0.075, 0.28, sleeveMaterial);
+    sleeve.rotation.x = -0.25;
+    box(hand, 0.14, 0.13, 0.065, 0, -0.02, 0.1, cuffMaterial);
+    box(hand, 0.1, 0.095, 0.08, 0, -0.005, 0.05, skinMaterial);
+    // Palma, cuatro dedos doblados y pulgar hacia el centro de la pantalla.
+    box(hand, 0.13, 0.11, 0.14, 0, 0, -0.04, skinMaterial);
+    for (let finger = 0; finger < 4; finger++) {
+      box(hand, 0.027, 0.085, 0.065, -0.048 + finger * 0.032, 0.01, -0.13, skinMaterial);
+    }
+    const thumb = box(hand, 0.05, 0.07, 0.09, -side * 0.075, -0.015, -0.04, skinMaterial);
+    thumb.rotation.z = side * 0.35;
+    handsScene.add(hand);
+  }
+
   const raycaster = new THREE.Raycaster();
+  // Estelas cortas para ver los disparos aunque todavía no haya arma.
+  const shotEffects = new THREE.Group();
+  shotEffects.name = 'disparos';
+  scene.add(shotEffects);
+  const tracerGeometry = new THREE.CylinderGeometry(0.012, 0.012, 1, 6);
+  const tracerMaterial = new THREE.MeshBasicMaterial({ color: 0xffdc80 });
+  const impactGeometry = new THREE.SphereGeometry(0.065, 8, 6);
+  const impactMaterial = new THREE.MeshBasicMaterial({ color: 0xfff1bd });
+  const shots = [];
+
+  function showShot(end) {
+    const start = new THREE.Vector3(0.16, -0.14, -0.3).applyQuaternion(camera.quaternion).add(camera.position);
+    const direction = end.clone().sub(start);
+    const effect = new THREE.Group();
+    const tracer = new THREE.Mesh(tracerGeometry, tracerMaterial);
+    tracer.position.copy(start).lerp(end, 0.5);
+    tracer.scale.y = direction.length();
+    tracer.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+    effect.add(tracer);
+    const impact = new THREE.Mesh(impactGeometry, impactMaterial);
+    impact.position.copy(end);
+    effect.add(impact);
+    shotEffects.add(effect);
+    shots.push({ effect, remaining: 0.14 });
+  }
+
+  function clearShots() {
+    shotEffects.clear();
+    shots.length = 0;
+  }
 
   function sync(state) {
     camera.position.set(state.player.x, SETTINGS.eyeHeight, state.player.z);
@@ -122,26 +220,36 @@ export function createScene(canvas, game) {
   }
 
   return {
-    renderer,
+    renderer, shotEffects,
+    reset: clearShots,
     shoot(state) {
       sync(state);
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
       const targets = enemies.filter((enemy, index) => state.enemies[index].hp > 0).map((enemy) => enemy.hitbox);
-      const hit = raycaster.intersectObjects([...walls, ...targets], false)[0];
+      const hit = raycaster.intersectObjects([...walls, floor, ceiling, ...targets], false)[0];
+      const end = hit ? hit.point : raycaster.ray.at(60, new THREE.Vector3());
+      showShot(end);
       return hit?.object.userData.enemyId ?? null;
     },
-    render(state) {
+    render(state, dt = 0) {
       sync(state);
+      for (let i = shots.length - 1; i >= 0; i--) {
+        shots[i].remaining -= dt;
+        if (shots[i].remaining <= 0) {
+          shotEffects.remove(shots[i].effect);
+          shots.splice(i, 1);
+        }
+      }
       renderer.autoClear = true;
       renderer.render(scene, camera);
       renderer.autoClear = false;
       renderer.clearDepth();
-      renderer.render(weaponScene, weaponCamera);
+      renderer.render(handsScene, handsCamera);
     },
     resize() {
-      camera.aspect = weaponCamera.aspect = innerWidth / innerHeight;
+      camera.aspect = handsCamera.aspect = innerWidth / innerHeight;
       camera.updateProjectionMatrix();
-      weaponCamera.updateProjectionMatrix();
+      handsCamera.updateProjectionMatrix();
       renderer.setPixelRatio(window.devicePixelRatio || 1);
       renderer.setSize(innerWidth, innerHeight);
     },
