@@ -1,0 +1,159 @@
+/* Grises y rojo, como el escenario y la barra inferior del juego. */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #292929;
+  color: #eeeeea;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+header, main, footer {
+  max-width: 1000px;
+  margin: auto;
+  padding: 28px;
+}
+header {
+  margin-top: 28px;
+  background: #3b3b38;
+  border: 3px solid;
+  border-color: #888880 #191919 #191919 #888880;
+  border-top: 5px solid #b5170c;
+}
+.etiqueta {
+  margin: 0;
+  color: #c7c7bf;
+  font: bold 13px "Courier New", monospace;
+  letter-spacing: 2px;
+}
+h1 {
+  margin: 8px 0;
+  color: #d32d20;
+  font: bold clamp(48px, 9vw, 80px) "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-shadow: 3px 3px #180604;
+}
+.presentacion {
+  margin-bottom: 24px;
+  color: #ddddD5;
+  font-size: 18px;
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid #777770;
+}
+nav a, .boton {
+  display: inline-block;
+  padding: 9px 22px;
+  border: 2px solid;
+  border-color: #aaaA9f #252523 #252523 #aaaA9f;
+  background: #666660;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: bold;
+}
+nav a:hover, .boton:hover {
+  background: #7b251d;
+}
+a:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
+}
+section {
+  margin-bottom: 26px;
+  padding: 26px;
+  border: 1px solid #777770;
+  background: #454541;
+}
+h2 {
+  margin-top: 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #777770;
+  font-size: 24px;
+}
+h2 span {
+  margin-right: 10px;
+  color: #ed5849;
+  font-family: "Courier New", monospace;
+}
+.datos-juego {
+  display: flex;
+  margin-bottom: 24px;
+  background: #777770;
+  border: 3px solid;
+  border-color: #a0a098 #292926 #292926 #a0a098;
+}
+.datos-juego div {
+  flex: 1;
+  min-width: 0;
+  padding: 15px 8px;
+  text-align: center;
+}
+.datos-juego div + div {
+  border-left: 2px solid #4b4b46;
+}
+.datos-juego strong {
+  display: block;
+  color: #b5170c;
+  font: bold 38px "Courier New", monospace;
+  text-shadow: 2px 2px #390700, -1px -1px #ed4a38;
+}
+.datos-juego span {
+  font: bold 12px "Courier New", monospace;
+}
+.boton {
+  padding: 12px 28px;
+  background: #92251c;
+  text-transform: uppercase;
+}
+.nota {
+  margin-bottom: 0;
+  color: #ccccC4;
+  font-size: 14px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #3b3b38;
+}
+th, td {
+  padding: 10px 14px;
+  border: 1px solid #777770;
+  text-align: left;
+}
+th {
+  background: #666660;
+}
+tr:nth-child(even) {
+  background: #484844;
+}
+kbd {
+  display: inline-block;
+  min-width: 25px;
+  padding: 1px 6px;
+  border: 1px solid #92928b;
+  border-bottom-width: 3px;
+  background: #666660;
+  font: 14px "Courier New", monospace;
+  text-align: center;
+}
+footer {
+  border-top: 2px solid #777770;
+  color: #bbbbB3;
+  font-size: 14px;
+}
+footer p {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  header { margin: 12px; }
+  header, main, footer { padding: 18px; }
+  section { padding: 18px; }
+  .datos-juego strong { font-size: 30px; }
+  .datos-juego span { font-size: 10px; }
+}

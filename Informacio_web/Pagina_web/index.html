@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#292929">
+  <title>Voltor - Proyecto DAW</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <p class="etiqueta">PROYECTO DAW · THREE.JS</p>
+    <h1>Voltor</h1>
+    <p class="presentacion">Un juego en primera persona inspirado en los shooters clásicos.</p>
+    <nav aria-label="Navegación principal">
+      <a href="#historia">Historia</a>
+      <a href="#juego">Juego</a>
+      <a href="#controles">Controles</a>
+    </nav>
+  </header>
+  <main>
+    <section id="historia">
+      <h2><span>01</span> Historia</h2>
+      <p>El protagonista recibe una carta de su casero con una subida de 1.000 € en el alquiler. Decide enfrentarse al propietario para intentar quedarse con su piso.</p>
+      <p>Esta es la idea del proyecto. Por ahora hemos creado un prototipo sencillo con Three.js para probar el movimiento, las colisiones y los disparos.</p>
+    </section>
+    <section id="juego">
+      <h2><span>02</span> El juego</h2>
+      <div class="datos-juego" aria-label="Datos de la partida">
+        <div><strong>06</strong><span>ENEMIGOS</span></div>
+        <div><strong>100%</strong><span>VIDA INICIAL</span></div>
+        <div><strong>05</strong><span>BALAS POR CARGADOR</span></div>
+      </div>
+      <p>Recorre el escenario y elimina a los seis enemigos. Cada uno necesita dos disparos. Pierdes si te quedas sin vida.</p>
+      <p>El cargador tiene 5 balas y puedes llevar 10 más de reserva: 15 en total. Recarga con R. Los disparos se ven como estelas hasta el punto de impacto.</p>
+      <p>Recoge objetos al pasar por encima: los botiquines verdes curan 25 de vida (máximo 100), las balas marrones y amarillas rellenan la munición y los escudos azules dan 10 de protección (máximo 50). El escudo absorbe el daño antes que la vida.</p>
+      <p><a class="boton" href="juego-threejs/">Abrir el juego</a></p>
+      <p class="nota">Necesitas teclado y ratón. Para ejecutarlo en local, sigue las instrucciones del README de la carpeta juego-threejs.</p>
+    </section>
+    <section id="controles">
+      <h2><span>03</span> Controles</h2>
+      <table>
+        <thead><tr><th>Acción</th><th>Tecla</th></tr></thead>
+        <tbody>
+          <tr><td>Moverse</td><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td></tr>
+          <tr><td>Mirar</td><td>Ratón</td></tr>
+          <tr><td>Disparar</td><td>Clic izquierdo</td></tr>
+          <tr><td>Recargar</td><td><kbd>R</kbd></td></tr>
+          <tr><td>Correr</td><td><kbd>Shift</kbd></td></tr>
+          <tr><td>Pausar</td><td><kbd>Escape</kbd></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+  <footer><p>Jalail Hazi, Quique Pons y Eric Diaz · Proyecto DAW</p></footer>
+</body>
+</html>
