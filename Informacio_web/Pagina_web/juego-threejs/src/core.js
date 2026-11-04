@@ -2,24 +2,30 @@
 export const TILE = 3;
 export const MAP = [
   '#################',
-  '#...E...#...A...#',
+  '#...ES..#...A...#',
   '#.......#.......#',
-  '#..##.......##..#',
+  '#..##.....S.##..#',
   '#..##...E...##..#',
   '#.......#.......#',
-  '#A..E...#...E.H.#',
+  '#A..E...#.S.E.H.#',
   '#.......#.......#',
   '###..#######..###',
-  '#...............#',
+  '#...S...........#',
   '#..##.......##..#',
   '#..##...E...##..#',
-  '#...............#',
+  '#......S........#',
   '#H......P......A#',
   '#.......#.......#',
-  '#...A...#...E...#',
+  '#...A.S.#...E...#',
   '#################',
 ];
-export const SETTINGS = Object.freeze({ radius: 0.3, eyeHeight: 1.6, speed: 4.8, sprint: 6.8, magazine: 8, reserve: 40, reloadSeconds: 1.25, fireDelay: 0.24, enemySpeed: 1.5, enemyDamage: 12, attackDelay: 0.95 });
+export const SETTINGS = Object.freeze({
+  radius: 0.3, eyeHeight: 1.6, speed: 4.8, sprint: 6.8,
+  magazine: 5, reserve: 10, maxReserve: 10,
+  maxHealth: 100, healthPickup: 25, maxShield: 50, shieldPickup: 10,
+  reloadSeconds: 1.25, fireDelay: 0.24,
+  enemySpeed: 1.5, enemyDamage: 12, attackDelay: 0.95,
+});
 export const center = (col, row) => ({ x: (col + 0.5) * TILE, z: (row + 0.5) * TILE });
 export const cellAt = (x, z) => ({ col: Math.floor(x / TILE), row: Math.floor(z / TILE) });
 export const wallAt = (col, row) => !MAP[row]?.[col] || MAP[row][col] === '#';
@@ -88,9 +94,10 @@ export function createGame() {
     const position = center(col, row);
     if (symbol === 'P') spawn = position;
     if (symbol === 'E') enemies.push({ id: enemies.length, ...position, hp: 2, cooldown: 0.8, path: [], pathTimer: 0 });
-    if (symbol === 'A' || symbol === 'H') pickups.push({ id: pickups.length, ...position, type: symbol === 'A' ? 'ammo' : 'health', active: true });
+    const pickupTypes = { A: 'ammo', H: 'health', S: 'shield' };
+    if (pickupTypes[symbol]) pickups.push({ id: pickups.length, ...position, type: pickupTypes[symbol], active: true });
   }));
-  return { status: 'ready', player: { ...spawn, yaw: 0, pitch: 0, health: 100, ammo: SETTINGS.magazine, reserve: SETTINGS.reserve }, enemies, pickups, kills: 0, elapsed: 0, reload: 0, fireCooldown: 0, notice: '', noticeTime: 0, result: '' };
+  return { status: 'ready', player: { ...spawn, yaw: 0, pitch: 0, health: SETTINGS.maxHealth, shield: 0, ammo: SETTINGS.magazine, reserve: SETTINGS.reserve }, enemies, pickups, kills: 0, elapsed: 0, reload: 0, fireCooldown: 0, notice: '', noticeTime: 0, result: '' };
 }
 
 export function announce(game, message, duration = 2) {
@@ -133,7 +140,9 @@ export function hitEnemy(game, id) {
 
 export function damagePlayer(game, amount) {
   if (game.status !== 'playing') return;
-  game.player.health = Math.max(0, game.player.health - amount);
+  const absorbed = Math.min(game.player.shield, amount);
+  game.player.shield -= absorbed;
+  game.player.health = Math.max(0, game.player.health - (amount - absorbed));
   if (!game.player.health) {
     game.status = 'lost';
     game.result = 'Te has quedado sin vida. Puedes volver a intentarlo.';
@@ -144,13 +153,21 @@ function collect(game) {
   for (const item of game.pickups) {
     if (!item.active || Math.hypot(item.x - game.player.x, item.z - game.player.z) > 1) continue;
     if (item.type === 'health') {
-      if (game.player.health >= 100) continue;
-      game.player.health = Math.min(100, game.player.health + 35);
-      announce(game, 'Botiquín: +35 de vida');
-    } else {
-      if (game.player.reserve >= 96) continue;
-      game.player.reserve = Math.min(96, game.player.reserve + 16);
-      announce(game, 'Munición: +16 balas');
+      if (game.player.health >= SETTINGS.maxHealth) continue;
+      const restored = Math.min(SETTINGS.healthPickup, SETTINGS.maxHealth - game.player.health);
+      game.player.health += restored;
+      announce(game, `Botiquín: +${restored} de vida`);
+    } else if (item.type === 'ammo') {
+      if (game.player.ammo === SETTINGS.magazine && game.player.reserve === SETTINGS.maxReserve) continue;
+      game.player.ammo = SETTINGS.magazine;
+      game.player.reserve = SETTINGS.maxReserve;
+      game.reload = 0;
+      announce(game, 'Munición completa');
+    } else if (item.type === 'shield') {
+      if (game.player.shield >= SETTINGS.maxShield) continue;
+      const restored = Math.min(SETTINGS.shieldPickup, SETTINGS.maxShield - game.player.shield);
+      game.player.shield += restored;
+      announce(game, `Escudo: +${restored}`);
     }
     item.active = false;
   }

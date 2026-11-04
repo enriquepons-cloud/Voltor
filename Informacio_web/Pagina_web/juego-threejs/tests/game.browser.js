@@ -57,17 +57,17 @@ test('WASD, ratón, colisiones, pausa y reanudación con entradas reales', async
 test('clic dispara, mata con dos impactos y R recarga conservando munición', async ({ page }) => {
   await start(page);
   await shoot(page);
-  await expect(page.locator('#ammo')).toHaveText('07');
+  await expect(page.locator('#ammo')).toHaveText('04');
   await expect.poll(async () => (await state(page)).enemies[4].hp).toBe(1);
   await page.waitForTimeout(300);
   await shoot(page);
   await expect(page.locator('#kill-count')).toHaveText('01 / 06');
-  await expect(page.locator('#ammo')).toHaveText('06');
+  await expect(page.locator('#ammo')).toHaveText('03');
   await page.keyboard.press('KeyR');
   await expect(page.locator('#combat-status')).toHaveText('Recargando...');
   await shoot(page);
-  await expect(page.locator('#ammo')).toHaveText('08', { timeout: 5000 });
-  await expect(page.locator('#reserve')).toHaveText('38');
+  await expect(page.locator('#ammo')).toHaveText('05', { timeout: 5000 });
+  await expect(page.locator('#reserve')).toHaveText('08');
 });
 
 test('los disparos no atraviesan las paredes', async ({ page }) => {
@@ -78,7 +78,7 @@ test('los disparos no atraviesan las paredes', async ({ page }) => {
     Object.assign(game.enemies[0], { x: 28.5, z: 43.5, cooldown: 20 });
   });
   await shoot(page);
-  await expect(page.locator('#ammo')).toHaveText('07');
+  await expect(page.locator('#ammo')).toHaveText('04');
   expect((await state(page)).enemies[0].hp).toBe(2);
   expect((await state(page)).kills).toBe(0);
 });
@@ -97,7 +97,8 @@ test('victoria mediante disparo final y reinicio limpio desde el botón', async 
   await page.getByRole('button', { name: 'Volver a jugar' }).click();
   await expect(page.locator('#overlay')).toBeHidden();
   const fresh = await state(page);
-  expect(fresh.player.health).toBe(100); expect(fresh.player.ammo).toBe(8);
+  expect(fresh.player.health).toBe(100); expect(fresh.player.ammo).toBe(5);
+  expect(fresh.player.reserve).toBe(10);
   expect(fresh.kills).toBe(0); expect(fresh.enemies.every((enemy) => enemy.hp === 2)).toBe(true);
 });
 
@@ -122,12 +123,56 @@ test('reiniciar desde pausa y recoger suministros actualiza el HUD', async ({ pa
     const item = game.pickups.find((entry) => entry.type === 'health');
     Object.assign(game.player, { x: item.x, z: item.z, health: 50 });
   });
-  await expect(page.locator('#health')).toHaveText('85');
+  await expect(page.locator('#health')).toHaveText('75');
   await page.evaluate(() => document.exitPointerLock());
   await page.getByRole('button', { name: 'Reiniciar' }).click();
   await expect(page.locator('#overlay')).toBeHidden();
   const fresh = await state(page);
-  expect(fresh.player.health).toBe(100); expect(fresh.pickups.every((item) => item.active)).toBe(true);
+  expect(fresh.player.health).toBe(100); expect(fresh.player.shield).toBe(0);
+  expect(fresh.pickups.every((item) => item.active)).toBe(true);
+});
+
+test('caminar sobre los tres suministros los recoge automáticamente y el escudo protege la vida', async ({ page }, testInfo) => {
+  await start(page);
+  // Aislar la recogida de los ataques: el movimiento y el bucle siguen siendo reales.
+  await page.evaluate(async () => {
+    const { game } = await import('/src/main.js');
+    game.enemies.forEach((enemy) => { enemy.hp = 0; });
+  });
+  for (const type of ['health', 'ammo', 'shield']) {
+    await page.evaluate(async (type) => {
+      const { game } = await import('/src/main.js');
+      const item = game.pickups.find((entry) => entry.type === type && entry.active);
+      Object.assign(game.player, { x: item.x, z: item.z + 1.4, yaw: 0, pitch: 0 });
+      if (type === 'health') game.player.health = 50;
+      if (type === 'ammo') { game.player.ammo = 0; game.player.reserve = 0; }
+    }, type);
+    if (type === 'ammo') {
+      // Esperar al HUD vacío antes de comprobar que el objeto lo rellena.
+      await expect(page.locator('#ammo')).toHaveText('00');
+      await expect(page.locator('#reserve')).toHaveText('00');
+    }
+    await page.keyboard.down('KeyW');
+    try {
+      if (type === 'health') await expect(page.locator('#health')).toHaveText('75');
+      if (type === 'ammo') {
+        await expect(page.locator('#ammo')).toHaveText('05');
+        await expect(page.locator('#reserve')).toHaveText('10');
+      }
+      if (type === 'shield') await expect(page.locator('#shield')).toHaveText('10');
+    } finally {
+      await page.keyboard.up('KeyW');
+    }
+    expect((await state(page)).pickups.some((item) => item.type === type && !item.active)).toBe(true);
+  }
+  await page.screenshot({ path: testInfo.outputPath('suministros-y-escudo.png') });
+  // Un ataque real gasta los 10 puntos de escudo y quita solo 2 de vida.
+  await page.evaluate(async () => {
+    const { game } = await import('/src/main.js');
+    Object.assign(game.enemies[0], { hp: 2, x: game.player.x, z: game.player.z - 1, cooldown: 0 });
+  });
+  await expect(page.locator('#shield')).toHaveText('00');
+  await expect(page.locator('#health')).toHaveText('73');
 });
 
 test('el menú sigue siendo utilizable en una ventana de portátil', async ({ page }, testInfo) => {
@@ -137,4 +182,28 @@ test('el menú sigue siendo utilizable en una ventana de portátil', async ({ pa
   await expect(button).toBeInViewport();
   await expect(page.locator('.controls')).toContainText('WASD');
   await page.screenshot({ path: testInfo.outputPath('portatil.png') });
+});
+
+test('el disparo muestra una estela y un impacto, se pausa y desaparece al continuar', async ({ page }, testInfo) => {
+  await start(page);
+  const result = await page.evaluate(async () => {
+    const { game, view } = await import('/src/main.js');
+    // Disparar y pausar en el mismo turno permite inspeccionar un efecto breve.
+    document.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+    game.status = 'paused';
+    document.exitPointerLock();
+    return {
+      effects: view.shotEffects.children.length,
+      parts: view.shotEffects.children[0]?.children.length,
+      targetHealth: game.enemies[4].hp,
+    };
+  });
+  expect(result).toEqual({ effects: 1, parts: 2, targetHealth: 1 });
+  await expect(page.locator('#screen-title')).toHaveText('Pausa');
+  await page.locator('#overlay').evaluate((element) => { element.style.visibility = 'hidden'; });
+  await page.screenshot({ path: testInfo.outputPath('disparo-visible-sin-arma.png') });
+  await page.locator('#overlay').evaluate((element) => { element.style.visibility = ''; });
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await expect.poll(async () => page.evaluate(async () => (await import('/src/main.js')).view.shotEffects.children.length)).toBe(0);
+  await expect(page.locator('#ammo')).toHaveText('04');
 });

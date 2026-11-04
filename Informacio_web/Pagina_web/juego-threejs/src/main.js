@@ -19,6 +19,7 @@ let contextLost = false;
 function reset() {
   game = createGame();
   keys.clear();
+  view.reset();
 }
 
 async function begin() {
@@ -115,6 +116,7 @@ function updateMenu() {
 
 function updateHUD() {
   document.querySelector('#health').textContent = game.player.health;
+  document.querySelector('#shield').textContent = String(game.player.shield).padStart(2, '0');
   document.querySelector('#ammo').textContent = String(game.player.ammo).padStart(2, '0');
   document.querySelector('#reserve').textContent = String(game.player.reserve).padStart(2, '0');
   document.querySelector('#kill-count').textContent = `${String(game.kills).padStart(2, '0')} / ${String(game.enemies.length).padStart(2, '0')}`;
@@ -137,7 +139,7 @@ function frame(now) {
     sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'),
   };
   updateGame(game, input, dt);
-  view.render(game);
+  view.render(game, game.status === 'playing' ? dt : 0);
   updateHUD();
   updateMenu();
   requestAnimationFrame(frame);
