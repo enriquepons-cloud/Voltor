@@ -249,8 +249,25 @@ export function createScene(canvas, game) {
     handsScene.add(hand);
   }
 
+  // La pistola del equipo se dibuja con las manos para que las paredes no la recorten.
+  const weapon = new THREE.Group();
+  weapon.name = 'pistola';
+  weapon.position.set(0.21, -0.27, -0.78);
+  weapon.rotation.y = Math.PI / 2 + 0.12;
+  handsScene.add(weapon);
+  const shotOrigin = new THREE.Vector3(0.16, -0.14, -0.3);
+  const weaponReady = loadModel('Pistola/Pistola.glb', 0.24).then((model) => {
+    const bounds = new THREE.Box3().setFromObject(model);
+    weapon.add(model);
+    weapon.updateMatrixWorld(true);
+    // El modelo original tiene el cañón orientado hacia su eje X positivo.
+    shotOrigin.set(bounds.max.x + 0.01, bounds.max.y - 0.05, (bounds.min.z + bounds.max.z) / 2);
+    weapon.localToWorld(shotOrigin);
+    return true;
+  }).catch(() => false);
+
   const raycaster = new THREE.Raycaster();
-  // Estelas cortas para ver los disparos aunque todavía no haya arma.
+  // Estelas cortas desde la punta del arma hasta el primer impacto.
   const shotEffects = new THREE.Group();
   shotEffects.name = 'disparos';
   scene.add(shotEffects);
@@ -261,7 +278,14 @@ export function createScene(canvas, game) {
   const shots = [];
 
   function showShot(end) {
-    const start = new THREE.Vector3(0.16, -0.14, -0.3).applyQuaternion(camera.quaternion).add(camera.position);
+    const start = shotOrigin.clone();
+    if (weapon.children.length > 0) {
+      // Ambas cámaras tienen distinto campo de visión: alinear el disparo con el cañón.
+      const ratio = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / Math.tan(THREE.MathUtils.degToRad(handsCamera.fov / 2));
+      start.x *= ratio;
+      start.y *= ratio;
+    }
+    start.applyQuaternion(camera.quaternion).add(camera.position);
     const direction = end.clone().sub(start);
     const effect = new THREE.Group();
     const tracer = new THREE.Mesh(tracerGeometry, tracerMaterial);
@@ -302,7 +326,7 @@ export function createScene(canvas, game) {
   }
 
   return {
-    renderer, shotEffects, scene,
+    renderer, shotEffects, scene, weapon, weaponReady,
     modelsReady: Promise.all(modelLoads),
     reset: clearShots,
     shoot(state) {

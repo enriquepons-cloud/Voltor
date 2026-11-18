@@ -29,6 +29,7 @@ test('carga los GLB reales, recoge sus modelos y los recupera al reiniciar', asy
   expect(models.enemies.every(Boolean)).toBe(true);
   expect(models.pickups.every(Boolean)).toBe(true);
   await page.getByRole('button', { name: 'Jugar' }).click();
+  await expect(page.locator('#overlay')).toBeHidden();
   await page.evaluate(async () => {
     const { game } = await import('/src/main.js');
     const item = game.pickups.find((entry) => entry.type === 'health');
@@ -93,9 +94,44 @@ test('si falla un GLB conserva la figura provisional y se puede jugar', async ({
     return view.scene.children.filter((child) => child.isSprite && child.visible).length;
   })).toBe(6);
   await page.getByRole('button', { name: 'Jugar' }).click();
+  await expect(page.locator('#overlay')).toBeHidden();
   await page.mouse.down();
   await page.mouse.up();
   await expect(page.locator('#ammo')).toHaveText('04');
   expect(await page.evaluate(async () => (await import('/src/main.js')).game.enemies[4].hp)).toBe(1);
   expect(errors).toEqual([]);
+});
+
+test('carga la pistola del equipo con las manos y permite disparar', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  expect(await page.evaluate(async () => {
+    const { view } = await import('/src/main.js');
+    if (!await view.weaponReady) return false;
+    const model = view.weapon.getObjectByName('modelo:Pistola/Pistola.glb');
+    let meshes = 0;
+    model?.traverse((part) => { if (part.isMesh) meshes++; });
+    return meshes > 0 && view.weapon.visible && model.visible;
+  })).toBe(true);
+  await page.getByRole('button', { name: 'Jugar' }).click();
+  await expect(page.locator('#overlay')).toBeHidden();
+  await page.screenshot({ path: testInfo.outputPath('pistola-del-equipo.png') });
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(page.locator('#ammo')).toHaveText('04');
+  expect(await page.evaluate(async () => (await import('/src/main.js')).game.enemies[4].hp)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('si no carga la pistola, las manos y los disparos siguen funcionando', async ({ page }) => {
+  await page.route('**/Pistola/Pistola.glb', (route) => route.fulfill({ status: 404, body: 'Modelo no encontrado' }));
+  await page.goto('/');
+  expect(await page.evaluate(async () => (await import('/src/main.js')).view.weaponReady)).toBe(false);
+  await page.getByRole('button', { name: 'Jugar' }).click();
+  await expect(page.locator('#overlay')).toBeHidden();
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(page.locator('#ammo')).toHaveText('04');
+  expect(await page.evaluate(async () => (await import('/src/main.js')).game.enemies[4].hp)).toBe(1);
 });
