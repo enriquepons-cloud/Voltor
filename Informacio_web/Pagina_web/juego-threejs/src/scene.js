@@ -1,5 +1,46 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MAP, TILE, SETTINGS, center } from './core.js';
+
+const modelLoader = new GLTFLoader();
+const modelCache = new Map();
+const modelsURL = new URL('../../../assets/Modelos%203D/', import.meta.url);
+
+// Ajusta los modelos de Blender al tamaño del juego y los apoya en el suelo.
+function loadModel(path, height, palette) {
+  const cacheKey = `${path}:${height}:${palette || ''}`;
+  if (!modelCache.has(cacheKey)) {
+    const pending = modelLoader.loadAsync(new URL(path, modelsURL).href).then(({ scene: model }) => {
+      const bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3());
+      const middle = bounds.getCenter(new THREE.Vector3());
+      const scale = height / Math.max(size.y, 0.001);
+      model.scale.setScalar(scale);
+      model.position.set(-middle.x * scale, -bounds.min.y * scale, -middle.z * scale);
+      model.traverse((part) => {
+        if (!part.isMesh) return;
+        part.castShadow = false;
+        part.receiveShadow = false;
+        if (!part.material) return;
+        const materials = Array.isArray(part.material) ? part.material : [part.material];
+        for (const material of materials) {
+          if (!material.color) continue;
+          const color = material.color;
+          if (palette === 'health' && color.r > color.g * 1.4 && color.r > color.b * 1.4) color.set(0x278b45);
+          if (palette === 'shield') color.set(color.r + color.g + color.b > 1.2 ? 0x388bea : 0x123c83);
+          if (palette === 'ammo') color.set(0xb08a35);
+        }
+      });
+      model.name = `modelo:${path}`;
+      return model;
+    }).catch((error) => {
+      console.warn(`No se pudo cargar ${path}; se usará su figura provisional.`, error);
+      throw error;
+    });
+    modelCache.set(cacheKey, pending);
+  }
+  return modelCache.get(cacheKey).then((model) => model.clone(true));
+}
 
 // Un dibujo pequeño para los enemigos. El fondo queda transparente.
 function createEnemyTexture() {
@@ -26,6 +67,7 @@ function createEnemyTexture() {
 }
 
 export function createScene(canvas, game) {
+  const modelLoads = [];
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   // Usar la resolución real, también en las pantallas Retina del Mac.
   renderer.setPixelRatio(window.devicePixelRatio || 1);
@@ -71,18 +113,33 @@ export function createScene(canvas, game) {
 
   const texture = createEnemyTexture();
   const enemies = game.enemies.map((enemy) => {
-    // Sprite siempre orientado hacia la cámara y una caja invisible para los disparos.
+    // El sprite sirve de respaldo mientras carga el modelo de Blender.
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, alphaTest: 0.1 }));
     sprite.scale.set(1.65, 2.15, 1);
     scene.add(sprite);
+    const modelGroup = new THREE.Group();
+    modelGroup.name = `enemigo:${enemy.id}`;
+    scene.add(modelGroup);
     const hitbox = box(scene, 0.85, 1.95, 0.55, enemy.x, 1.08, enemy.z, darkMaterial);
     hitbox.visible = false;
     hitbox.userData.enemyId = enemy.id;
-    return { sprite, hitbox };
+    const visual = { sprite, modelGroup, hitbox };
+    modelLoads.push(loadModel('malvat.glb', 1.95).then((model) => {
+      modelGroup.add(model);
+      sprite.visible = false;
+      return true;
+    }).catch(() => false));
+    return visual;
   });
 
   const pickups = game.pickups.map((item) => {
     const group = new THREE.Group();
+    group.name = `suministro:${item.id}`;
+    const fallback = new THREE.Group();
+    group.add(fallback);
+    let modelPath;
+    let modelHeight;
+    let groundOffset;
     if (item.type === 'shield') {
       // Borde azul oscuro e interior azul claro en las dos caras.
       const shape = new THREE.Shape();
@@ -93,44 +150,53 @@ export function createScene(canvas, game) {
       shape.lineTo(-0.26, -0.15);
       shape.closePath();
       const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.12, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.025, bevelSegments: 1, steps: 1 });
-      group.add(new THREE.Mesh(geometry, shieldMaterial));
+      fallback.add(new THREE.Mesh(geometry, shieldMaterial));
       for (const z of [-0.03, 0.15]) {
         const face = new THREE.Mesh(new THREE.ShapeGeometry(shape), shieldFaceMaterial);
         face.scale.setScalar(0.8);
         face.position.z = z;
-        group.add(face);
-        box(group, 0.065, 0.37, 0.018, 0, -0.005, z, shieldMarkMaterial);
-        box(group, 0.3, 0.065, 0.018, 0, 0.06, z, shieldMarkMaterial);
+        fallback.add(face);
+        box(fallback, 0.065, 0.37, 0.018, 0, -0.005, z, shieldMarkMaterial);
+        box(fallback, 0.3, 0.065, 0.018, 0, 0.06, z, shieldMarkMaterial);
       }
-      group.position.set(item.x, 0.5, item.z);
+      fallback.position.y = 0.5;
+      modelPath = 'Escut/Escut.glb'; modelHeight = 0.95; groundOffset = 0.05;
     } else if (item.type === 'health') {
       // Maletín verde con tapa, asa y una cruz blanca a cada lado.
-      box(group, 0.76, 0.45, 0.4, 0, 0, 0, healthMaterial);
-      box(group, 0.8, 0.08, 0.44, 0, 0.2, 0, healthLidMaterial);
-      box(group, 0.06, 0.14, 0.08, -0.14, 0.31, 0, healthMaterial);
-      box(group, 0.06, 0.14, 0.08, 0.14, 0.31, 0, healthMaterial);
-      box(group, 0.34, 0.06, 0.08, 0, 0.4, 0, healthLidMaterial);
+      box(fallback, 0.76, 0.45, 0.4, 0, 0, 0, healthMaterial);
+      box(fallback, 0.8, 0.08, 0.44, 0, 0.2, 0, healthLidMaterial);
+      box(fallback, 0.06, 0.14, 0.08, -0.14, 0.31, 0, healthMaterial);
+      box(fallback, 0.06, 0.14, 0.08, 0.14, 0.31, 0, healthMaterial);
+      box(fallback, 0.34, 0.06, 0.08, 0, 0.4, 0, healthLidMaterial);
       for (const z of [-0.21, 0.21]) {
-        box(group, 0.3, 0.08, 0.025, 0, -0.02, z, whiteMaterial);
-        box(group, 0.08, 0.28, 0.025, 0, -0.02, z, whiteMaterial);
+        box(fallback, 0.3, 0.08, 0.025, 0, -0.02, z, whiteMaterial);
+        box(fallback, 0.08, 0.28, 0.025, 0, -0.02, z, whiteMaterial);
       }
-      group.position.set(item.x, 0.3, item.z);
+      fallback.position.y = 0.3;
+      modelPath = 'Farmaciola/Farmaciola.glb'; modelHeight = 0.62; groundOffset = 0.02;
     } else {
       // Bala vertical: casquillo amarillo latón y punta marrón cobriza.
       const casing = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.42, 16), brassMaterial);
       casing.position.y = 0.27;
-      group.add(casing);
+      fallback.add(casing);
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 16), brassMaterial);
       base.position.y = 0.04;
-      group.add(base);
+      fallback.add(base);
       const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.08, 16), brassMaterial);
       neck.position.y = 0.52;
-      group.add(neck);
+      fallback.add(neck);
       const tip = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 16), copperMaterial);
       tip.position.y = 0.67;
-      group.add(tip);
-      group.position.set(item.x, 0.015, item.z);
+      fallback.add(tip);
+      fallback.position.y = 0.015;
+      modelPath = 'CaixaBales/CaixaBala.glb'; modelHeight = 0.62; groundOffset = 0.02;
     }
+    group.position.set(item.x, groundOffset, item.z);
+    modelLoads.push(loadModel(modelPath, modelHeight, item.type).then((model) => {
+      fallback.visible = false;
+      group.add(model);
+      return true;
+    }).catch(() => false));
     scene.add(group);
     return group;
   });
@@ -211,16 +277,22 @@ export function createScene(canvas, game) {
     body.position.set(state.player.x, 0, state.player.z);
     body.rotation.y = state.player.yaw;
     state.enemies.forEach((enemy, index) => {
-      enemies[index].sprite.visible = enemy.hp > 0;
+      const visual = enemies[index];
+      visual.sprite.visible = enemy.hp > 0 && visual.modelGroup.children.length === 0;
+      visual.modelGroup.visible = enemy.hp > 0 && visual.modelGroup.children.length > 0;
       enemies[index].sprite.position.set(enemy.x, 1.08, enemy.z);
-      enemies[index].hitbox.position.set(enemy.x, 1.08, enemy.z);
+      visual.modelGroup.position.set(enemy.x, 0, enemy.z);
+      // El modelo 3D gira hacia el jugador en lugar de ser un sprite billboarding.
+      visual.modelGroup.rotation.y = Math.atan2(state.player.x - enemy.x, state.player.z - enemy.z);
+      visual.hitbox.position.set(enemy.x, 1.08, enemy.z);
     });
     state.pickups.forEach((item, index) => { pickups[index].visible = item.active; });
     scene.updateMatrixWorld(true);
   }
 
   return {
-    renderer, shotEffects,
+    renderer, shotEffects, scene,
+    modelsReady: Promise.all(modelLoads),
     reset: clearShots,
     shoot(state) {
       sync(state);
