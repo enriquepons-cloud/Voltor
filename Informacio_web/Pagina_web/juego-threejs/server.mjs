@@ -4,7 +4,9 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(fileURLToPath(import.meta.url));
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const modelsRoot = resolve(root, '../../assets/Modelos 3D');
+const modelsPrefix = '/assets/Modelos 3D/';
+const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.glb': 'model/gltf-binary' };
 const port = Number(process.env.PORT || 5173);
 const server = createServer(async (req, res) => {
   try {
@@ -13,13 +15,17 @@ const server = createServer(async (req, res) => {
       return;
     }
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    let file = resolve(root, `.${pathname}`);
-    if (file !== root && !file.startsWith(root + sep)) throw new Error('Outside root');
+    const modelRequest = pathname.startsWith(modelsPrefix);
+    const base = modelRequest ? modelsRoot : root;
+    const relativePath = modelRequest ? '/' + pathname.slice(modelsPrefix.length) : pathname;
+    let file = resolve(base, `.${relativePath}`);
+    if (file !== base && !file.startsWith(base + sep)) throw new Error('Outside root');
     if ((await stat(file)).isDirectory()) file = resolve(file, 'index.html');
     file = await realpath(file);
-    if (!file.startsWith(root + sep)) throw new Error('Outside root');
+    if (!file.startsWith(base + sep)) throw new Error('Outside root');
     const data = await readFile(file);
-    res.writeHead(200, { 'Content-Type': `${types[extname(file)] || 'application/octet-stream'}; charset=utf-8`, 'Cache-Control': 'no-cache' });
+    const type = types[extname(file)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': type.startsWith('text/') || type === 'application/json' ? `${type}; charset=utf-8` : type, 'Cache-Control': 'no-cache' });
     res.end(req.method === 'HEAD' ? undefined : data);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Archivo no encontrado');

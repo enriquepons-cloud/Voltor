@@ -14,10 +14,10 @@ Desde la raíz del repositorio:
 ```bash
 cd Informacio_web/Pagina_web/juego-threejs
 npm ci
-cd ..
+cd ../..
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-Abre http://127.0.0.1:8000 y pulsa «Abrir el juego». Usa Chrome de escritorio con teclado y ratón. Ctrl+C detiene el servidor.
+Abre http://127.0.0.1:8000/Pagina_web/ y pulsa «Abrir el juego». La raíz del servidor es `Informacio_web`, para incluir los modelos de la carpeta `assets`. Usa Chrome de escritorio con teclado y ratón. Ctrl+C detiene el servidor.
 
 El juego también puede ejecutarse por separado con `npm start` desde su carpeta, en http://127.0.0.1:5173.

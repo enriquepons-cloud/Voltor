@@ -201,7 +201,7 @@ test('el disparo muestra una estela y un impacto, se pausa y desaparece al conti
   expect(result).toEqual({ effects: 1, parts: 2, targetHealth: 1 });
   await expect(page.locator('#screen-title')).toHaveText('Pausa');
   await page.locator('#overlay').evaluate((element) => { element.style.visibility = 'hidden'; });
-  await page.screenshot({ path: testInfo.outputPath('disparo-visible-sin-arma.png') });
+  await page.screenshot({ path: testInfo.outputPath('disparo-visible-con-pistola.png') });
   await page.locator('#overlay').evaluate((element) => { element.style.visibility = ''; });
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await expect.poll(async () => page.evaluate(async () => (await import('/src/main.js')).view.shotEffects.children.length)).toBe(0);
