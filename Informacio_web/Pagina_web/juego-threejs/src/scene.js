@@ -128,8 +128,13 @@ export function createScene(canvas, game) {
     const hitbox = box(scene, 0.85, 1.95, 0.55, enemy.x, 1.08, enemy.z, darkMaterial);
     hitbox.visible = false;
     hitbox.userData.enemyId = enemy.id;
-    const visual = { sprite, modelGroup, hitbox };
+    const visual = { sprite, modelGroup, hitbox, hitboxY: 1.08 };
     modelLoads.push(loadModel('malvat.glb', 1.95).then((model) => {
+      const bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3());
+      // La caja de disparo abarca también los brazos y pies del modelo real.
+      hitbox.scale.set(size.x / 0.85, size.y / 1.95, size.z / 0.55);
+      visual.hitboxY = bounds.getCenter(new THREE.Vector3()).y;
       modelGroup.add(model);
       sprite.visible = false;
       return true;
@@ -289,7 +294,8 @@ export function createScene(canvas, game) {
       visual.modelGroup.position.set(enemy.x, 0, enemy.z);
       // El modelo 3D gira hacia el jugador en lugar de ser un sprite billboarding.
       visual.modelGroup.rotation.y = Math.atan2(state.player.x - enemy.x, state.player.z - enemy.z);
-      visual.hitbox.position.set(enemy.x, 1.08, enemy.z);
+      visual.hitbox.position.set(enemy.x, visual.hitboxY, enemy.z);
+      visual.hitbox.rotation.y = visual.modelGroup.rotation.y;
     });
     state.pickups.forEach((item, index) => { pickups[index].visible = item.active; });
     scene.updateMatrixWorld(true);
