@@ -17,6 +17,7 @@ function loadModel(path, height, palette) {
       const scale = height / Math.max(size.y, 0.001);
       model.scale.setScalar(scale);
       model.position.set(-middle.x * scale, -bounds.min.y * scale, -middle.z * scale);
+      const adjustedMaterials = new Set();
       model.traverse((part) => {
         if (!part.isMesh) return;
         part.castShadow = false;
@@ -24,7 +25,11 @@ function loadModel(path, height, palette) {
         if (!part.material) return;
         const materials = Array.isArray(part.material) ? part.material : [part.material];
         for (const material of materials) {
-          if (!material.color) continue;
+          if (!material.color || adjustedMaterials.has(material)) continue;
+          adjustedMaterials.add(material);
+          // Sin mapa de entorno, el metal puro de Blender se vería casi negro.
+          material.metalness = Math.min(material.metalness ?? 0, 0.15);
+          material.roughness = Math.max(material.roughness ?? 1, 0.65);
           const color = material.color;
           if (palette === 'health' && color.r > color.g * 1.4 && color.r > color.b * 1.4) color.set(0x278b45);
           if (palette === 'shield') color.set(color.r + color.g + color.b > 1.2 ? 0x388bea : 0x123c83);
