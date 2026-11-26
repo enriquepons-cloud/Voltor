@@ -73,6 +73,7 @@ function createEnemyTexture() {
 
 export function createScene(canvas, game) {
   const modelLoads = [];
+  const furnitureLoads = [];
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   // Usar la resolución real, también en las pantallas Retina del Mac.
   renderer.setPixelRatio(window.devicePixelRatio || 1);
@@ -132,7 +133,7 @@ export function createScene(canvas, game) {
       placeholder.geometry.dispose();
       return new THREE.Box3().setFromObject(model).max.y;
     }).catch(() => height);
-    modelLoads.push(body.then(async (top) => {
+    furnitureLoads.push(body.then(async (top) => {
       if (!display) return;
       const model = await loadModel(display.model, display.height, undefined, display.width);
       model.position.y += top;
@@ -352,6 +353,7 @@ export function createScene(canvas, game) {
   return {
     renderer, shotEffects, scene, weapon, weaponReady,
     modelsReady: Promise.all(modelLoads),
+    furnitureReady: Promise.all(furnitureLoads),
     reset: clearShots,
     shoot(state) {
       sync(state);
