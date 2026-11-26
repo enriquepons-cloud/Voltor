@@ -1,20 +1,20 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { MAP, TILE, SETTINGS, center } from './core.js';
+import { MAP, TILE, SETTINGS, FURNITURE, center } from './core.js';
 
 const modelLoader = new GLTFLoader();
 const modelCache = new Map();
 const modelsURL = new URL('../../../assets/Modelos%203D/', import.meta.url);
 
 // Ajusta los modelos de Blender al tamaño del juego y los apoya en el suelo.
-function loadModel(path, height, palette) {
-  const cacheKey = `${path}:${height}:${palette || ''}`;
+function loadModel(path, height, palette, maxWidth = Infinity) {
+  const cacheKey = `${path}:${height}:${palette || ''}:${maxWidth}`;
   if (!modelCache.has(cacheKey)) {
     const pending = modelLoader.loadAsync(new URL(path, modelsURL).href).then(({ scene: model }) => {
       const bounds = new THREE.Box3().setFromObject(model);
       const size = bounds.getSize(new THREE.Vector3());
       const middle = bounds.getCenter(new THREE.Vector3());
-      const scale = height / Math.max(size.y, 0.001);
+      const scale = Math.min(height / Math.max(size.y, 0.001), maxWidth / Math.max(size.x, size.z, 0.001));
       model.scale.setScalar(scale);
       model.position.set(-middle.x * scale, -bounds.min.y * scale, -middle.z * scale);
       const adjustedMaterials = new Set();
@@ -114,6 +114,30 @@ export function createScene(canvas, game) {
       const position = center(col, row);
       walls.push(box(scene, TILE, 3.8, TILE, position.x, 1.9, position.z, wallMaterial));
     }
+  }
+
+  for (const { col, row, model: path, height, turn, display } of FURNITURE) {
+    const { x, z } = center(col, row);
+    const furniture = new THREE.Group();
+    furniture.position.set(x, 0, z);
+    furniture.rotation.y = turn;
+    scene.add(furniture);
+    const placeholder = box(furniture, 1.3, height, 1.0, 0, height / 2, 0, wallMaterial);
+    const blocker = box(scene, TILE, height, TILE, x, height / 2, z, darkMaterial);
+    blocker.visible = false;
+    walls.push(blocker);
+    const body = loadModel(path, height, undefined, 2.45).then((model) => {
+      furniture.add(model);
+      placeholder.removeFromParent();
+      placeholder.geometry.dispose();
+      return new THREE.Box3().setFromObject(model).max.y;
+    }).catch(() => height);
+    modelLoads.push(body.then(async (top) => {
+      if (!display) return;
+      const model = await loadModel(display.model, display.height, undefined, display.width);
+      model.position.y += top;
+      furniture.add(model);
+    }).catch(() => {}));
   }
 
   const texture = createEnemyTexture();
