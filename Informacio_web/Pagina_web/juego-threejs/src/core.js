@@ -1,5 +1,15 @@
 // Reglas y colisiones independientes de WebGL, comprobables con node:test.
 export const TILE = 3;
+// Los muebles ocupan celdas libres fuera de los puntos de aparición.
+export const FURNITURE = [
+  { col: 6, row: 14, model: 'Sofa.glb', height: 1.05, turn: Math.PI / 2 },
+  { col: 10, row: 14, model: 'Armari/Armari.glb', height: 2.1, turn: -Math.PI / 2 },
+  { col: 7, row: 11, model: 'Taula/taula.glb', height: 0.95, turn: 0,
+    display: { model: 'llibre.glb', height: 0.09, width: 0.45 } },
+  { col: 9, row: 11, model: 'Taula/taula.glb', height: 0.95, turn: 0,
+    display: { model: 'Pis/Pis.glb', height: 0.55, width: 1.15 } },
+];
+const furnitureCells = new Set(FURNITURE.map(({ col, row }) => row * 100 + col));
 export const MAP = [
   '#################',
   '#...ES..#...A...#',
@@ -28,7 +38,7 @@ export const SETTINGS = Object.freeze({
 });
 export const center = (col, row) => ({ x: (col + 0.5) * TILE, z: (row + 0.5) * TILE });
 export const cellAt = (x, z) => ({ col: Math.floor(x / TILE), row: Math.floor(z / TILE) });
-export const wallAt = (col, row) => !MAP[row]?.[col] || MAP[row][col] === '#';
+export const wallAt = (col, row) => !MAP[row]?.[col] || MAP[row][col] === '#' || furnitureCells.has(row * 100 + col);
 
 export function canOccupy(x, z, radius = SETTINGS.radius) {
   for (let row = Math.floor((z - radius) / TILE); row <= Math.floor((z + radius) / TILE); row++) {

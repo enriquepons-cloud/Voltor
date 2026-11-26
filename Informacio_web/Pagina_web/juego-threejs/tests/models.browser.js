@@ -50,6 +50,25 @@ test('carga los GLB reales, recoge sus modelos y los recupera al reiniciar', asy
   })).toBe(true);
 });
 
+test('los cinco modelos de MS2 aparecen en el nivel y los muebles bloquean el paso', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { view } = await import('/src/main.js');
+    const { FURNITURE, canOccupy, center } = await import('/src/core.js');
+    await view.furnitureReady;
+    const paths = ['Sofa.glb', 'Armari/Armari.glb', 'Taula/taula.glb', 'llibre.glb', 'Pis/Pis.glb'];
+    return {
+      loaded: paths.filter(path => view.scene.getObjectByName(`modelo:${path}`)),
+      collidable: FURNITURE.every(({ col, row }) => {
+        const { x, z } = center(col, row);
+        return !canOccupy(x, z);
+      }),
+    };
+  });
+  expect(result.loaded).toHaveLength(5);
+  expect(result.collidable).toBe(true);
+});
+
 test('los disparos alcanzan los laterales y pies visibles del enemigo GLB', async ({ page }) => {
   await page.goto('/');
   await inspectModels(page);
